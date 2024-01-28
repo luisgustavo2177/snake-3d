@@ -47,25 +47,25 @@ void add_wall(int x, int z) {
 void initialize_walls() {
     // Superior
     for (int i = 0; i <= 150; ++i) {
-        if (i >= 65 && i <= 85) continue; // Buraco
+        if (i >= 65 && i <= 87) continue; // Buraco
         add_wall(i, 0);
     }
 
     // Inferior
     for (int i = 0; i <= 150; ++i) {
-        if (i >= 65 && i <= 85) continue;
+        if (i >= 65 && i <= 87) continue;
         add_wall(i, 150);
     }
  
     // Esquerda
     for (int i = 0; i <= 150; ++i) {
-        if (i >= 65 && i <= 85) continue;
+        if (i >= 65 && i <= 87) continue;
         add_wall(0, i);
     }
 
     // Direita
     for (int i = 0; i <= 150; ++i) {
-        if (i >= 65 && i <= 85) continue;
+        if (i >= 65 && i <= 87) continue;
         add_wall(150, i);
     }
 }
@@ -326,8 +326,8 @@ bool collision() {
     // Checa se a cobra colidiu com alguma parede
     for (size_t i = 0; i < wall_positions.size(); i++) {
         if ((wall_positions[i].first == _x && wall_positions[i].second == _z) ||
-            ((wall_positions[i].first >= _x) && (wall_positions[i].first <= _x + 5) && (wall_positions[i].second >= _z) && (wall_positions[i].second <= _z + 5)) ||
-            ((wall_positions[i].first >= _x) && (wall_positions[i].first <= _x + 5) && (wall_positions[i].second <= _z) && (wall_positions[i].second >= _z - 5)))
+            ((wall_positions[i].first >= _x) && (wall_positions[i].first <= _x + 2) && (wall_positions[i].second >= _z) && (wall_positions[i].second <= _z + 2)) ||
+            ((wall_positions[i].first >= _x) && (wall_positions[i].first <= _x + 2) && (wall_positions[i].second <= _z) && (wall_positions[i].second >= _z - 2)))
             return true;
     }
     
