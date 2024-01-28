@@ -45,25 +45,25 @@ void add_wall(int x, int z) {
 
 // Função para inicializar as paredes
 void initialize_walls() {
-    // Esquerda
+    // Superior
     for (int i = 0; i <= 150; ++i) {
         if (i >= 65 && i <= 85) continue; // Buraco
         add_wall(i, 0);
     }
 
-    // Direita
+    // Inferior
     for (int i = 0; i <= 150; ++i) {
         if (i >= 65 && i <= 85) continue;
         add_wall(i, 150);
     }
  
-    // Cima
+    // Esquerda
     for (int i = 0; i <= 150; ++i) {
         if (i >= 65 && i <= 85) continue;
         add_wall(0, i);
     }
 
-    // Baixo
+    // Direita
     for (int i = 0; i <= 150; ++i) {
         if (i >= 65 && i <= 85) continue;
         add_wall(150, i);
