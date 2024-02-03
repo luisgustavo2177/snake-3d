@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <windows.h>
+#include <math.h>
 #include <vector>
 
 // Biblioteca para uso de som
@@ -46,6 +47,7 @@ GLbyte game_over = true;
 GLbyte enable_light = true;
 GLbyte paused = false;
 GLint last_level_changed = 1;
+GLbyte game_over_sound_played = false;
 
 // Variáveis da cobra
 GLint body_pos[2][100] = {{}};
@@ -83,17 +85,33 @@ typedef struct {
     const char* ext;        // extensão (wav, mp4, mp3...)
 } music;
 
-music background_sound = {"./sounds/snake_game_song.wav", "wav"};
-// music background_sound = {"./music_de_fundo/Written-In-The-Stars-ft.wav", "wav"};
-// music background_sound = {"./music_de_fundo/1.wav", "wav"};
+music background_sound = {"./sounds/snake_song.wav", "wav"};
+music score_sound = {"./sounds/score.wav", "wav"};
+music win_sound = {"./sounds/win.wav", "wav"};
+music game_over_sound = {"./sounds/game_over.wav", "wav"};
 
 // Função para tocar o som
-void play_sound() {
+void play_song() {
     PlaySound(background_sound.file_name, NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
 }
 
+// Função para tocar o som de pontuação
+void play_score_sound() {
+    PlaySound(score_sound.file_name, NULL, SND_FILENAME | SND_ASYNC);
+}
+
+// Função para tocar o som quando a cobra passar de nível
+void play_win_sound() {
+    PlaySound(win_sound.file_name, NULL, SND_FILENAME | SND_ASYNC);
+}
+
+// Função para tocar o som de game over
+void play_game_over_sound() {
+    PlaySound(game_over_sound.file_name, NULL, SND_FILENAME | SND_ASYNC);
+}
+
 // Função para carregar o som
-void load_sound() {
+void load_song() {
     PlaySound(background_sound.file_name, NULL, SND_FILENAME | SND_ASYNC | SND_LOOP | SND_NOSTOP);
     PlaySound(NULL, NULL, SND_ASYNC | SND_FILENAME | SND_LOOP | SND_NOSTOP | SND_PURGE);
     PlaySound(background_sound.file_name, NULL, SND_FILENAME | SND_ASYNC | SND_LOOP | SND_NOSTOP | SND_NOWAIT);
@@ -181,7 +199,7 @@ void initialize_walls() {
 
     for (int i = 0; i <= 150; ++i) {
         if (i >= 65 && i <= 87) continue;
-        add_wall(i, 150); // Inferior
+        add_wall(i, 151); // Inferior
         add_wall(150, i); // Direita
     }
 }
@@ -218,13 +236,13 @@ void level_3() {
 
     for (int i = 30; i <= 120; ++i) {
         if (i >= 65 && i <= 87) continue;
-        add_wall(i, 30);
+        add_wall(i, 29);
         add_wall(30, i);
     }
 
     for (int i = 30; i <= 120; ++i) {
         if (i >= 65 && i <= 87) continue;
-        add_wall(i, 120);
+        add_wall(i, 121);
         add_wall(120, i);
     }
 
@@ -299,8 +317,8 @@ int main(int argc, char** argv) {
     glutCreateWindow("Snake Game 3D");
     init();
     
-    load_sound(); // Carrega o som
-    play_sound(); // Inicia o som
+    load_song(); // Carrega o som
+    play_song(); // Inicia o som
     
     glutSpecialFunc(special);
     glutKeyboardFunc(keyboard);
@@ -495,10 +513,10 @@ bool collision() {
 
     // Checa se a cobra colidiu com alguma parede
     for (size_t i = 0; i < wall_positions.size(); i++) {
-        if ((wall_positions[i].first == _x && wall_positions[i].second == _z) ||
-            ((wall_positions[i].first >= _x) && (wall_positions[i].first <= _x + 2) && (wall_positions[i].second >= _z) && (wall_positions[i].second <= _z + 2)) ||
-            ((wall_positions[i].first >= _x) && (wall_positions[i].first <= _x + 2) && (wall_positions[i].second <= _z) && (wall_positions[i].second >= _z - 2)))
+        double distance = sqrt(pow(wall_positions[i].first - _x, 2) + pow(wall_positions[i].second - _z, 2));
+        if (distance <= 3) {
             return true;
+        }
     }
     
     return false;
@@ -536,7 +554,13 @@ void run(int value) {
         }
 
         // Checa se a cobra colidiu com alguma parede, se sim, o jogo acaba
-        if (collision()) game_over = true;
+        if (collision()) {
+            game_over = true;
+            if (!game_over_sound_played) {
+                play_game_over_sound(); // Toca o som de game over
+                game_over_sound_played = true;
+            }
+        }
 
         // Checa se a cobra comeu a comida, se sim, aumenta os pontos e o tamanho da cobra e cria uma nova comida
         if ((_x == _bx && _z == _bz) ||
@@ -545,11 +569,13 @@ void run(int value) {
             ((_x <= _bx) && (_x >= _bx - 4) && (_z >= _bz) && (_z <= _bz + 4)) ||
             ((_x >= _bx) && (_x <= _bx + 4) && (_z <= _bz) && (_z >= _bz - 4))) {
             points++;
+            // play_score_sound(); // Toca o som de pontuação
             if (points < 100) size++;
-            if ((points % 15) == 0 && lvl < 3) lvl++;
+            if ((points % 10) == 0 && lvl < 3) lvl++;
             
             if (lvl != last_level_changed) {
                 change_level(lvl);
+                play_song(); // Reinicia o som
                 last_level_changed = lvl;
             }
             new_food();
@@ -664,9 +690,13 @@ void special(int key, int x, int y) {
 void keyboard(unsigned char key, int x, int y) { 
     switch (key) {
     case SPACE: // Iniciar/Reiniciar o jogo
+        if (game_over) play_song(); // Reinicia o som
+
         reset();
         game_started = true;
-        change_level(1);
+        game_over_sound_played = false;
+        lvl = last_level_changed = 1;
+        change_level(lvl);
         glutPostRedisplay();
         break;
     case 'W': case 'w':
