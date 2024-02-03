@@ -460,20 +460,23 @@ void new_food() {
     time(&seconds);
     srand((unsigned int) seconds);
 
-    bool food_on_wall;
+    const int min_distance = 10; // A distância mínima entre a comida e as paredes
+
+    bool food_too_close_to_wall;
     do {
-        food_on_wall = false;
+        food_too_close_to_wall = false;
         _bx = random_number(_fw - _iw, _iw + 10);
         _bz = random_number(_fh - _ih, _ih + 10);
 
-        // Checa se a comida não está em cima de alguma parede
+        // Checa se a comida não está muito perto de alguma parede
         for (size_t i = 0; i < wall_positions.size(); i++) {
-            if (wall_positions[i].first == _bx && wall_positions[i].second == _bz) {
-                food_on_wall = true;
+            if (abs(wall_positions[i].first - _bx) <= min_distance &&
+                abs(wall_positions[i].second - _bz) <= min_distance) {
+                food_too_close_to_wall = true;
                 break;
             }
         }
-    } while (food_on_wall);
+    } while (food_too_close_to_wall);
 }
 
 // Função para checar colisões
@@ -544,12 +547,12 @@ void run(int value) {
             points++;
             if (points < 100) size++;
             if ((points % 15) == 0 && lvl < 3) lvl++;
-            new_food();
             
             if (lvl != last_level_changed) {
                 change_level(lvl);
                 last_level_changed = lvl;
             }
+            new_food();
         }
 
         for (i = 0; i < size; i++) { // Salva as posições das partes do corpo
