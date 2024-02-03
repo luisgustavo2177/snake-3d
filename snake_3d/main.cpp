@@ -24,83 +24,11 @@
 #include <windows.h>
 #include <vector>
 
-//Biblioteca para uso de som
+// Biblioteca para uso de som
 #include <mmsystem.h>
 
-//Biblioteca para criação das telas 
+// Biblioteca para criação das telas 
 #include "glut_text.h"
-
-// Configurar o som
-typedef struct {
-    const char* nome_arquivo;  // nome do arquivo de som
-    const char* ext;         // extensão(wav, mp4, mp3...)
-} music;
-
-// music sons_de_fundo = {"./music_de_fundo/classicMusicSnakeGame.wav", "wav"};
-// music sons_de_fundo = {"./music_de_fundo/Written-In-The-Stars-ft.wav", "wav"};
-music sons_de_fundo = {"./music_de_fundo/1.wav", "wav"};
-
-void playSound(){
-    PlaySound(sons_de_fundo.nome_arquivo, NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
-}
-
-void loadSound(){
-    PlaySound(sons_de_fundo.nome_arquivo, NULL, SND_FILENAME | SND_ASYNC | SND_LOOP | SND_NOSTOP);
-    PlaySound(NULL, NULL, SND_ASYNC | SND_FILENAME | SND_LOOP | SND_NOSTOP | SND_PURGE);
-    PlaySound(sons_de_fundo.nome_arquivo, NULL, SND_FILENAME | SND_ASYNC | SND_LOOP | SND_NOSTOP | SND_NOWAIT);
-}
-
-//Configura as texturas
-typedef struct {////////////////////////////////////////////////////////////
-    int width;
-    int height;
-    int channels;
-    unsigned char* data;
-} Image;
-
-Image* load_image(const char* filename);
-void free_image(Image* image);
-
-// Armazena o ID da textura gerada pelo OpenGL
-GLuint textureID;////////////////////////////////////////////////////////////
-GLuint textureID1;
-GLuint textureID2;
-
-void lerImagem(const char* filename, int textura) {//////////////////////
-    Image* image = load_image(filename);
-
-    if (image) {
-    	if(textura == 1){
-			glGenTextures(1, &textureID);
-        	glBindTexture(GL_TEXTURE_2D, textureID);	
-		}else if(textura == 2){
-			glGenTextures(1, &textureID1);
-        	glBindTexture(GL_TEXTURE_2D, textureID1);
-		}else{
-			glGenTextures(1, &textureID2);
-        	glBindTexture(GL_TEXTURE_2D, textureID2);
-		}
-
-        // Configura os parï¿½metros da textura
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-        // Carrega os dados da imagem na textura
-        GLenum format = (image->channels == 3) ? GL_RGB : GL_RGBA;
-        glTexImage2D(GL_TEXTURE_2D, 0, format, image->width, image->height, 0, format, GL_UNSIGNED_BYTE, image->data);
-
-        // Gera mipmaps para a textura
-        gluBuild2DMipmaps(GL_TEXTURE_2D, format, image->width, image->height, format, GL_UNSIGNED_BYTE, image->data);
-
-        // Desvincula a textura
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Libera a memï¿½ria da imagem
-        free_image(image);
-    }
-}
 
 // Definição de constantes
 #define UP 1
@@ -110,44 +38,6 @@ void lerImagem(const char* filename, int textura) {//////////////////////
 #define ESC 27
 #define SPACE 32
 
-// Defina um par para armazenar as coordenadas x e z
-typedef std::pair<int, int> Position;
-
-// Crie um vetor para armazenar as posições das paredes
-std::vector<Position> wall_positions;
-
-// Função para adicionar uma parede
-void add_wall(int x, int z) {
-    wall_positions.push_back({x, z});
-}
-
-// Função para inicializar as paredes
-void initialize_walls() {
-    // Superior
-    for (int i = 0; i <= 150; ++i) {
-        if (i >= 65 && i <= 87) continue; // Buraco
-        add_wall(i, 0);
-    }
-
-    // Inferior
-    for (int i = 0; i <= 150; ++i) {
-        if (i >= 65 && i <= 87) continue;
-        add_wall(i, 150);
-    }
- 
-    // Esquerda
-    for (int i = 0; i <= 150; ++i) {
-        if (i >= 65 && i <= 87) continue;
-        add_wall(0, i);
-    }
-
-    // Direita
-    for (int i = 0; i <= 150; ++i) {
-        if (i >= 65 && i <= 87) continue;
-        add_wall(150, i);
-    }
-}
-
 // Variáveis de controle
 GLint lvl = 1;
 GLint points = 0;
@@ -155,6 +45,7 @@ GLint size = 0;
 GLbyte game_over = true;
 GLbyte enable_light = true;
 GLbyte paused = false;
+GLint last_level_changed = 1;
 
 // Variáveis da cobra
 GLint body_pos[2][100] = {{}};
@@ -175,12 +66,220 @@ GLint _fw = 150;
 GLint _fh = 150;
 
 // Variáveis para o ângulo da câmera
-static GLfloat view_rotx = 45.0F ;
-static GLfloat view_roty = 0.0F ;
-static GLfloat view_rotz = 0.0F ;
+static GLfloat view_rotx = 45.0F;
+static GLfloat view_roty = 0.0F;
+static GLfloat view_rotz = 0.0F;
 
-static GLfloat head_rotation = 90.0F ;
+static GLfloat head_rotation = 90.0F;
 static GLfloat zoom = -300.0f;
+
+/*************************
+|  CONFIGURAÇÕES DE SOM  |
+*************************/
+
+// Configurar o som
+typedef struct {
+    const char* file_name;  // nome do arquivo de som
+    const char* ext;        // extensão (wav, mp4, mp3...)
+} music;
+
+music background_sound = {"./sounds/snake_game_song.wav", "wav"};
+// music background_sound = {"./music_de_fundo/Written-In-The-Stars-ft.wav", "wav"};
+// music background_sound = {"./music_de_fundo/1.wav", "wav"};
+
+// Função para tocar o som
+void play_sound() {
+    PlaySound(background_sound.file_name, NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
+}
+
+// Função para carregar o som
+void load_sound() {
+    PlaySound(background_sound.file_name, NULL, SND_FILENAME | SND_ASYNC | SND_LOOP | SND_NOSTOP);
+    PlaySound(NULL, NULL, SND_ASYNC | SND_FILENAME | SND_LOOP | SND_NOSTOP | SND_PURGE);
+    PlaySound(background_sound.file_name, NULL, SND_FILENAME | SND_ASYNC | SND_LOOP | SND_NOSTOP | SND_NOWAIT);
+}
+
+/*****************************
+|  CONFIGURAÇÕES DE TEXTURA  |
+*****************************/
+
+//Configura as texturas
+// typedef struct {////////////////////////////////////////////////////////////
+//     int width;
+//     int height;
+//     int channels;
+//     unsigned char* data;
+// } Image;
+
+// // Image* load_image(const char* filename);
+// void free_image(Image* image);
+
+// // Armazena o ID da textura gerada pelo OpenGL
+// GLuint textureID;////////////////////////////////////////////////////////////
+// GLuint textureID1;
+// GLuint textureID2;
+
+// void read_image(const char* filename, int texture) {//////////////////////
+//     Image* image = load_image(filename);
+
+//     if (image) {
+//     	if (texture == 1) {
+// 			glGenTextures(1, &textureID);
+//         	glBindTexture(GL_TEXTURE_2D, textureID);	
+// 		} else if (texture == 2) {
+// 			glGenTextures(1, &textureID1);
+//         	glBindTexture(GL_TEXTURE_2D, textureID1);
+// 		} else {
+// 			glGenTextures(1, &textureID2);
+//         	glBindTexture(GL_TEXTURE_2D, textureID2);
+// 		}
+
+//         // Configura os parâmetros da textura
+//         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+//         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+//         // Carrega os dados da imagem na textura
+//         GLenum format = (image->channels == 3) ? GL_RGB : GL_RGBA;
+//         glTexImage2D(GL_TEXTURE_2D, 0, format, image->width, image->height, 0, format, GL_UNSIGNED_BYTE, image->data);
+
+//         // Gera mipmaps para a textura
+//         gluBuild2DMipmaps(GL_TEXTURE_2D, format, image->width, image->height, format, GL_UNSIGNED_BYTE, image->data);
+
+//         // Desvincula a textura
+//         glBindTexture(GL_TEXTURE_2D, 0);
+
+//         // Libera a memória da imagem
+//         free_image(image);
+//     }
+// }
+
+/**************************
+|  CONFIGURAÇÕES DE MAPA  |
+**************************/
+
+// Defina um par para armazenar as coordenadas x e z
+typedef std::pair<int, int> Position;
+
+// Crie um vetor para armazenar as posições das paredes
+std::vector<Position> wall_positions;
+
+// Função para adicionar uma parede
+void add_wall(int x, int z) {
+    wall_positions.push_back({x, z});
+}
+
+// Função para inicializar as paredes
+void initialize_walls() {
+    // Quadrado maior
+    for (int i = 0; i <= 150; ++i) {
+        if (i >= 65 && i <= 87) continue; // Buraco
+        add_wall(i, 0); // Superior
+        add_wall(0, i); // Esquerda
+    }
+
+    for (int i = 0; i <= 150; ++i) {
+        if (i >= 65 && i <= 87) continue;
+        add_wall(i, 150); // Inferior
+        add_wall(150, i); // Direita
+    }
+}
+
+// Função para resetar a cobra quando passar de nível
+void reset_snake() {
+    _x = 10;
+    _z = 15;
+    direction = 0;
+    size = 0;
+    head_rotation = 90.0F;
+}
+
+void level_2() {
+    wall_positions.clear();
+    initialize_walls();
+
+    for (int i = 30; i <= 120; ++i) {
+        if (i >= 65 && i <= 87) continue;
+        add_wall(i, 30);
+        add_wall(30, i);
+    }
+
+    for (int i = 30; i <= 120; ++i) {
+        if (i >= 65 && i <= 87) continue;
+        add_wall(i, 120);
+        add_wall(120, i);
+    }
+}
+
+void level_3() {
+    wall_positions.clear();
+    initialize_walls();
+
+    for (int i = 30; i <= 120; ++i) {
+        if (i >= 65 && i <= 87) continue;
+        add_wall(i, 30);
+        add_wall(30, i);
+    }
+
+    for (int i = 30; i <= 120; ++i) {
+        if (i >= 65 && i <= 87) continue;
+        add_wall(i, 120);
+        add_wall(120, i);
+    }
+
+    for (int i = 55; i <= 95; ++i) {
+        add_wall(75, i);
+        add_wall(i, 75);
+    }
+}
+
+// Função para mudar de nível
+void change_level(int level) {
+    switch (level) {
+        case 1:
+            wall_positions.clear();
+            initialize_walls();
+            break;
+        case 2:
+            level_2();
+            reset_snake();
+            break;
+        case 3:
+            level_3();
+            reset_snake();
+            break;
+        default:
+            // Código para lidar com níveis inválidos
+            break;
+    }
+}
+
+/***************************
+|  CONFIGURAÇÕES DE TEXTO  |
+***************************/
+
+// Função para desenhar a tela de boas-vindas
+bool game_started = false; // Verifica se deve mostrar a tela de Bem-vindo ou Game Over
+void welcome_screen_game_over_screen() {
+    if (!game_started) {
+        glColor3f(0.16, 0.95, 0.43); // Cor do texto (PRETO)
+        draw_text_bitmap(35, 24, "BEM-VINDO!");
+        glColor3f(0.0, 0.0, 0.0);
+        draw_text_bitmap(0, 10, "Este eh o jogo Snake-3D em OpenGL");
+        draw_text_bitmap(-5, 0, "Para iniciar o jogo aperte a tecla ESPACO...");
+    } else if (game_over) {
+        glColor3f(0.95, 0.18, 0.16); // Cor do texto (vermelho)
+        draw_text_bitmap(35, 24, "GAME OVER!");
+        glColor3f(0.0, 0.0, 0.0);
+        draw_text_bitmap(25, 10, "PONTUACAO FINAL: " + to_string(points) + " ");
+        draw_text_bitmap(0, 0, "Pressione ESPACO para reiniciar...");
+    }
+}
+
+/*********************
+|  CÓDIGO PRINCIPAL  |
+*********************/
 
 // Declaração de funções
 void init(void);
@@ -191,44 +290,25 @@ void keyboard (unsigned char key, int x, int y);
 void run(int value);
 void new_food();
 
-// Função para desenhar a tela de boas-vindas
-bool game_started = false;//Verifica se deve mostrar a tela de Bem-vindo ou Game Over
-void welcome_screen_game_over_screen() {
-	if(!game_started){
-	    glColor3f(0.0, 0.0, 0.0); // Cor do texto (VERDE)
-	    draw_text_bitmap(35, 20, "BEM-VINDO");
-	    draw_text_bitmap(0, 10, "Este eh o jogo Snake-3D em OpenGL");
-	    draw_text_bitmap(-5, 0, "Para iniciar o jogo aperte a tecla espaco");
-	}
-    else if (game_over){
-		glColor3f(1.0, 0.0, 0.0); // Cor do texto (vermelho)
-	    draw_text_bitmap(35, 20, "GAME OVER");
-	    draw_text_bitmap(25, 10, "Pontuacao Final: " + to_string(points) + " ");
-	    draw_text_bitmap(0, 0, "Pressione ESPACO para reiniciar");
-	}
-}
-
-
 // Função principal
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-    glutInitWindowSize(800,550);
-    glutInitWindowPosition(80,80);
+    glutInitWindowSize(800, 550);
+    glutInitWindowPosition(400, 150);
     glutCreateWindow("Snake Game 3D");
-    initialize_walls(); // Inicializa as paredes antes de iniciar o jogo
     init();
     
-	loadSound(); // carrega o som
-    playSound(); // inicia o som
+    load_sound(); // Carrega o som
+    play_sound(); // Inicia o som
     
     glutSpecialFunc(special);
     glutKeyboardFunc(keyboard);
     
-	glEnable(GL_DEPTH_TEST);
-	lerImagem("./texturas/snake.bmp", 1);
-	lerImagem("./texturas/grass_mine.bmp", 2);
-	lerImagem("./texturas/paredes.bmp", 3);
+    glEnable(GL_DEPTH_TEST);
+    // read_image("./texturas/snake.bmp", 1);
+    // read_image("./texturas/grass_mine.bmp", 2);
+    // read_image("./texturas/paredes.bmp", 3);
     
     glutDisplayFunc(display);
     glutReshapeFunc(resize);
@@ -259,7 +339,7 @@ void init_light() {
 // Configurações iniciais
 void init(void) {
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0.0, 1.0, 0.0, 1.0f); // Muda a cor de fundo para verde
+    glClearColor(0.47, 0.32, 0.31, 1.0f); // Muda a cor de fundo para verde
     
     if (enable_light) {
         glEnable(GL_COLOR_MATERIAL); // Habilita cor
@@ -294,10 +374,10 @@ void reset() {
     points = 0;
     size = 0;
     game_over = false;
-    view_rotx = 45.0F ;
-    view_roty = 0.0F ;
-    view_rotz = 0.0F ;
-    head_rotation = 90.0F ;
+    view_rotx = 45.0F;
+    view_roty = 0.0F;
+    view_rotz = 0.0F;
+    head_rotation = 90.0F;
 }
 
 // Função para desenhar a cobra
@@ -313,13 +393,12 @@ void draw_snake() {
     glColor3f(0.0, 0.6, 0.2);
     glTranslatef(75.0, -16.0, 75.0);
     glScalef(155, 5.0, 155);
-	glutSolidCube(1);
-	glPopMatrix();
-	
+    glutSolidCube(1);
+    glPopMatrix();
 
     // Desenha a cabeça da cobra
     glColor3f(1, 0, 0); // Cor da cabeça da cobra (vermelho)
-    glTranslatef(_x, -10.0, _z);// Pega a posição da cabeça da cobra de acordo com _x e _z
+    glTranslatef(_x, -10.0, _z); // Pega a posição da cabeça da cobra de acordo com _x e _z
     glScalef(0.5, 0.5, 0.5);
     glutSolidSphere(10, 20, 20); // Desenha a cabeça como uma esfera um pouco maior que as esferas do corpo
     glRotatef(head_rotation, 0.0, 1.0, 0.0);
@@ -362,12 +441,12 @@ void draw_food() {
 // Função para desenhar o status do jogo na tela
 void game_status() {
     char tmp_str[40];
-    glColor3f(1.0, 0.0, 0.0);
+    glColor3f(0.0, 0.0, 0.0);
     sprintf(tmp_str, "SNAKE 3D - GAME");
-    draw_text_bitmap(45, 20, tmp_str);
+    draw_text_bitmap(43, 22, tmp_str);
     glColor3f(0, 0, 0);
-    sprintf(tmp_str, "LEVEL: %d PONTOS: %d", lvl, points);
-    draw_text_bitmap(40, 10,tmp_str);
+    sprintf(tmp_str, "NIVEL: %d    PONTOS: %d", lvl, points);
+    draw_text_bitmap(38, 10, tmp_str);
 }
 
 // Gerador de números aleatórios para a localização da comida que a cobra vai comer
@@ -464,8 +543,13 @@ void run(int value) {
             ((_x >= _bx) && (_x <= _bx + 4) && (_z <= _bz) && (_z >= _bz - 4))) {
             points++;
             if (points < 100) size++;
-            if ((points % 5) == 0 && lvl < 15) lvl++;
+            if ((points % 15) == 0 && lvl < 3) lvl++;
             new_food();
+            
+            if (lvl != last_level_changed) {
+                change_level(lvl);
+                last_level_changed = lvl;
+            }
         }
 
         for (i = 0; i < size; i++) { // Salva as posições das partes do corpo
@@ -478,42 +562,42 @@ void run(int value) {
         }
 
         // Configura o timer para a próxima iteração
-        glutTimerFunc(130, run, 0);
+        glutTimerFunc(110, run, 0);
     } else {
         // Se o jogo estiver pausado, configura o timer para continuar verificando após um intervalo
         glutTimerFunc(500, run, 0);
     }
 }
 
-void drawTexturedCube(GLuint t) {
-    GLfloat vertices[][3] = {
-        {-1.0, -1.0, -1.0}, {1.0, -1.0, -1.0}, {1.0, 1.0, -1.0}, {-1.0, 1.0, -1.0},
-        {-1.0, -1.0, 1.0}, {1.0, -1.0, 1.0}, {1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0}
-    };
+// void drawTexturedCube(GLuint t) {
+//     GLfloat vertices[][3] = {
+//         {-1.0, -1.0, -1.0}, {1.0, -1.0, -1.0}, {1.0, 1.0, -1.0}, {-1.0, 1.0, -1.0},
+//         {-1.0, -1.0, 1.0}, {1.0, -1.0, 1.0}, {1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0}
+//     };
 
-    GLfloat texCoords[][2] = {
-        {0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}
-    };
+//     GLfloat texCoords[][2] = {
+//         {0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}
+//     };
 
-    GLint faces[][4] = {
-        {0, 1, 2, 3}, {1, 5, 6, 2}, {5, 4, 7, 6}, {4, 0, 3, 7}, {3, 2, 6, 7}, {4, 5, 1, 0}
-    };
+//     GLint faces[][4] = {
+//         {0, 1, 2, 3}, {1, 5, 6, 2}, {5, 4, 7, 6}, {4, 0, 3, 7}, {3, 2, 6, 7}, {4, 5, 1, 0}
+//     };
 
-    glBindTexture(GL_TEXTURE_2D, t);
-    glEnable(GL_TEXTURE_2D);
+//     glBindTexture(GL_TEXTURE_2D, t);
+//     glEnable(GL_TEXTURE_2D);
 
-    glBegin(GL_QUADS);
-    for (int i = 0; i < 6; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            glTexCoord2fv(texCoords[j]);
-            glVertex3fv(vertices[faces[i][j]]);
-        }
-    }
-    glEnd();
+//     glBegin(GL_QUADS);
+//     for (int i = 0; i < 6; ++i) {
+//         for (int j = 0; j < 4; ++j) {
+//             glTexCoord2fv(texCoords[j]);
+//             glVertex3fv(vertices[faces[i][j]]);
+//         }
+//     }
+//     glEnd();
     
-    glDisable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
+//     glDisable(GL_TEXTURE_2D);
+//     glBindTexture(GL_TEXTURE_2D, 0);
+// }
 
 // Adicione esta função para desenhar as paredes
 void draw_walls() {
@@ -579,9 +663,10 @@ void keyboard(unsigned char key, int x, int y) {
     case SPACE: // Iniciar/Reiniciar o jogo
         reset();
         game_started = true;
+        change_level(1);
         glutPostRedisplay();
         break;
-	case 'W': case 'w':
+    case 'W': case 'w':
         if (direction != UP) direction = DOWN;
         break;
     case 'S': case 's':
@@ -593,7 +678,7 @@ void keyboard(unsigned char key, int x, int y) {
     case 'D': case 'd':
         if (direction != LEFT) direction = RIGHT;
         break;
-	case 'P': case 'p': // Pausar/Despausar o jogo
+    case 'P': case 'p': // Pausar/Despausar o jogo
         paused = !paused;
         break;
     case ESC: // Sair do jogo
