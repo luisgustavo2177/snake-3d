@@ -596,13 +596,13 @@ void draw_snake() {
 	
 	draw_gram();// Desenha o plano que a cobra vai correr
 
-    // Desenha a cabeça da cobra
-    glColor3f(1, 0, 0); // Cor da cabeça da cobra (vermelho)
+	// Desenha a cabeça da cobra
+    glColor3f(0.7, 0, 0.92); // Cor da cabeça da cobra (roxo)
     glTranslatef(_x, -10.0, _z); // Pega a posição da cabeça da cobra de acordo com _x e _z
     glScalef(0.5, 0.5, 0.5);
     glutSolidSphere(10, 20, 20); // Desenha a cabeça como uma esfera um pouco maior que as esferas do corpo
     glRotatef(head_rotation, 0.0, 1.0, 0.0);
-    glColor3f(1, 0, 0);
+    glColor3f(0.7, 0, 0.92);
     glTranslatef(0, 0.0, 6.0);
     glScalef(0.8, 1.0, 1.0);
     glutSolidCone(10, 10, 20, 20);
@@ -619,7 +619,7 @@ void draw_snake() {
         glPushMatrix();
         manipulate_view_angle();
         glTranslatef(body_pos[0][i], -10.0, body_pos[1][i]); // Localização do corpo da cobra
-        glColor3f(1,0,0); // Cor do corpo da cobra (vermelho)
+        glColor3f(0.7, 0, 0.92); // Cor do corpo da cobra (roxo)
         glScalef(0.5,0.5,0.5);
         glutSolidSphere(7,20,20);
         glPopMatrix();
@@ -631,6 +631,7 @@ void draw_walls() {
         glPushMatrix();
         manipulate_view_angle();
         glTranslatef(wall_positions[i].first, -10.0, wall_positions[i].second);
+        glColor3f(0,0.35,0.8);
         glScalef(0.5, 0.5, 0.5);
         drawTexturedCube(textureID2);
         glPopMatrix();
