@@ -25,8 +25,9 @@
 #include <math.h>
 #include <vector>
 
-// Biblioteca para uso de som
+// Biblioteca para uso de som e Textura
 #include <mmsystem.h>
+#include "image_loader.h"
 
 // Biblioteca para criação das telas 
 #include "glut_text.h"
@@ -75,6 +76,50 @@ static GLfloat view_rotz = 0.0F;
 
 static GLfloat head_rotation = 90.0F;
 static GLfloat zoom = -300.0f;
+
+/*************************
+|  CONFIGURAÇÕES DE TEXTURA  |
+*************************/
+
+// Armazena o ID da textura gerada pelo OpenGL
+GLuint textureID;////////////////////////////////////////////////////////////
+GLuint textureID1;
+GLuint textureID2;
+
+void read_image(const char* filename, int texture) {//////////////////////
+    Image* image = load_image(filename);
+    if (image) {
+    	if (texture == 1) {
+			glGenTextures(1, &textureID);
+        	glBindTexture(GL_TEXTURE_2D, textureID);	
+		} else if (texture == 2) {
+			glGenTextures(1, &textureID1);
+        	glBindTexture(GL_TEXTURE_2D, textureID1);
+		} else {
+			glGenTextures(1, &textureID2);
+        	glBindTexture(GL_TEXTURE_2D, textureID2);
+		}
+
+        // Configura os parâmetros da textura
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        // Carrega os dados da imagem na textura
+        GLenum format = (image->channels == 3) ? GL_RGB : GL_RGBA;
+        glTexImage2D(GL_TEXTURE_2D, 0, format, image->width, image->height, 0, format, GL_UNSIGNED_BYTE, image->data);
+
+        // Gera mipmaps para a textura
+        gluBuild2DMipmaps(GL_TEXTURE_2D, format, image->width, image->height, format, GL_UNSIGNED_BYTE, image->data);
+
+        // Desvincula a textura
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        // Libera a memória da imagem
+        free_image(image);
+    }
+}
 
 /*************************
 |  CONFIGURAÇÕES DE SOM  |
@@ -268,6 +313,10 @@ int main(int argc, char** argv) {
     glutKeyboardFunc(keyboard);
     
     glEnable(GL_DEPTH_TEST);
+    //Carregar as texturas
+	// read_image("./texturas/mine_snake.bmp", 1);
+    read_image("./texturas/grass_mine.bmp", 2);
+    read_image("./texturas/paredes.bmp", 3);
     
     glutDisplayFunc(display);
     glutReshapeFunc(resize);
@@ -336,52 +385,6 @@ void reset() {
     view_roty = 0.0F;
     view_rotz = 0.0F;
     head_rotation = 90.0F;
-}
-
-// Função para desenhar a cobra
-void draw_snake() {
-    int  i;
-
-    // Desenha a cabeça da cobra e o plano
-    glPushMatrix();
-    manipulate_view_angle();
-
-    // Desenha o plano que a cobra vai correr
-    glPushMatrix();
-    glColor3f(0.0, 0.6, 0.2);
-    glTranslatef(75.0, -16.0, 75.0);
-    glScalef(155, 5.0, 155);
-    glutSolidCube(1);
-    glPopMatrix();
-
-    // Desenha a cabeça da cobra
-    glColor3f(0.7, 0, 0.92); // Cor da cabeça da cobra (roxo)
-    glTranslatef(_x, -10.0, _z); // Pega a posição da cabeça da cobra de acordo com _x e _z
-    glScalef(0.5, 0.5, 0.5);
-    glutSolidSphere(10, 20, 20); // Desenha a cabeça como uma esfera um pouco maior que as esferas do corpo
-    glRotatef(head_rotation, 0.0, 1.0, 0.0);
-    glColor3f(0.7, 0, 0.92);
-    glTranslatef(0, 0.0, 6.0);
-    glScalef(0.8, 1.0, 1.0);
-    glutSolidCone(10, 10, 20, 20);
-    glColor3f(1, 1, 1);
-    glTranslatef(-4.0, 10.0, 0.0);
-    glScalef(0.3, 0.3, 0.3);
-    glutSolidSphere(10, 20, 20);
-    glTranslatef(26.0, 0.0, 0.0);
-    glutSolidSphere(10, 20, 20);
-    glPopMatrix();
-
-    // Desenha o corpo da cobra
-    for (i = 0; i < size; i++) { // Loop através do tamanho e desenha esferas representando o corpo
-        glPushMatrix();
-        manipulate_view_angle();
-        glTranslatef(body_pos[0][i], -10.0, body_pos[1][i]); // Localização do corpo da cobra
-        glColor3f(0.7, 0, 0.92); // Cor do corpo da cobra (roxo)
-        glScalef(0.5,0.5,0.5);
-        glutSolidSphere(7,20,20);
-        glPopMatrix();
-    }
 }
 
 // Função para desenhar a comida
@@ -544,15 +547,92 @@ void run(int value) {
     }
 }
 
+void drawTexturedCube(GLuint t) {
+    GLfloat vertices[][3] = {
+	    {-5.0, -5.0, -5.0}, {5.0, -5.0, -5.0}, {5.0, 5.0, -5.0}, {-5.0, 5.0, -5.0},
+	    {-5.0, -5.0, 5.0}, {5.0, -5.0, 5.0}, {5.0, 5.0, 5.0}, {-5.0, 5.0, 5.0}
+	};
+
+    GLfloat texCoords[][2] = {
+        {0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}
+    };
+
+    GLint faces[][4] = {
+        {0, 1, 2, 3}, {1, 5, 6, 2}, {5, 4, 7, 6}, {4, 0, 3, 7}, {3, 2, 6, 7}, {4, 5, 1, 0}
+    };
+
+    glBindTexture(GL_TEXTURE_2D, t);
+    glEnable(GL_TEXTURE_2D);
+
+    glBegin(GL_QUADS);
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            glTexCoord2fv(texCoords[j]);
+            glVertex3fv(vertices[faces[i][j]]);
+        }
+    }
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+// Desenha o plano que a cobra vai correr
+void draw_gram(){
+    glPushMatrix();
+    glColor3f(0.0, 0.6, 0.2);
+    glTranslatef(75.0, -16.0, 75.0);
+    glScalef(15.5, 0.2, 15.5);
+    drawTexturedCube(textureID1);
+    glPopMatrix();
+}
+// Função para desenhar a cobra
+void draw_snake() {
+    int  i;
+
+    // Desenha a cabeça da cobra e o plano
+    glPushMatrix();
+    manipulate_view_angle();
+	
+	draw_gram();// Desenha o plano que a cobra vai correr
+
+    // Desenha a cabeça da cobra
+    glColor3f(1, 0, 0); // Cor da cabeça da cobra (vermelho)
+    glTranslatef(_x, -10.0, _z); // Pega a posição da cabeça da cobra de acordo com _x e _z
+    glScalef(0.5, 0.5, 0.5);
+    glutSolidSphere(10, 20, 20); // Desenha a cabeça como uma esfera um pouco maior que as esferas do corpo
+    glRotatef(head_rotation, 0.0, 1.0, 0.0);
+    glColor3f(1, 0, 0);
+    glTranslatef(0, 0.0, 6.0);
+    glScalef(0.8, 1.0, 1.0);
+    glutSolidCone(10, 10, 20, 20);
+    glColor3f(1, 1, 1);
+    glTranslatef(-4.0, 10.0, 0.0);
+    glScalef(0.3, 0.3, 0.3);
+    glutSolidSphere(10, 20, 20);
+    glTranslatef(26.0, 0.0, 0.0);
+    glutSolidSphere(10, 20, 20);
+    glPopMatrix();
+
+    // Desenha o corpo da cobra
+    for (i = 0; i < size; i++) { // Loop através do tamanho e desenha esferas representando o corpo
+        glPushMatrix();
+        manipulate_view_angle();
+        glTranslatef(body_pos[0][i], -10.0, body_pos[1][i]); // Localização do corpo da cobra
+        glColor3f(1,0,0); // Cor do corpo da cobra (vermelho)
+        glScalef(0.5,0.5,0.5);
+        glutSolidSphere(7,20,20);
+        glPopMatrix();
+    }
+}
 // Adicione esta função para desenhar as paredes
 void draw_walls() {
     for (size_t i = 0; i < wall_positions.size(); ++i) {
         glPushMatrix();
         manipulate_view_angle();
         glTranslatef(wall_positions[i].first, -10.0, wall_positions[i].second);
-        glColor3f(0.2, 0.2, 0.2);
         glScalef(0.5, 0.5, 0.5);
-        glutSolidCube(7);
+        drawTexturedCube(textureID2);
         glPopMatrix();
     }
 }
