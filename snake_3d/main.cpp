@@ -77,16 +77,16 @@ static GLfloat view_rotz = 0.0F;
 static GLfloat head_rotation = 90.0F;
 static GLfloat zoom = -300.0f;
 
-/*************************
+/*****************************
 |  CONFIGURAÇÕES DE TEXTURA  |
-*************************/
+*****************************/
 
 // Armazena o ID da textura gerada pelo OpenGL
-GLuint textureID;////////////////////////////////////////////////////////////
+GLuint textureID;
 GLuint textureID1;
 GLuint textureID2;
 
-void read_image(const char* filename, int texture) {//////////////////////
+void read_image(const char* filename, int texture) {
     Image* image = load_image(filename);
     if (image) {
     	if (texture == 1) {
@@ -132,23 +132,11 @@ typedef struct {
 } music;
 
 music background_sound = {"./sounds/snake_song.wav", "wav"};
-music score_sound = {"./sounds/score.wav", "wav"};
-music win_sound = {"./sounds/win.wav", "wav"};
 music game_over_sound = {"./sounds/game_over.wav", "wav"};
 
 // Função para tocar o som
 void play_song() {
     PlaySound(background_sound.file_name, NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
-}
-
-// Função para tocar o som de pontuação
-void play_score_sound() {
-    PlaySound(score_sound.file_name, NULL, SND_FILENAME | SND_ASYNC);
-}
-
-// Função para tocar o som quando a cobra passar de nível
-void play_win_sound() {
-    PlaySound(win_sound.file_name, NULL, SND_FILENAME | SND_ASYNC);
 }
 
 // Função para tocar o som de game over
@@ -313,10 +301,10 @@ int main(int argc, char** argv) {
     glutKeyboardFunc(keyboard);
     
     glEnable(GL_DEPTH_TEST);
+
     //Carregar as texturas
-	// read_image("./texturas/mine_snake.bmp", 1);
-    read_image("./texturas/grass_mine.bmp", 2);
-    read_image("./texturas/paredes.bmp", 3);
+    read_image("./textures/grass_mine.bmp", 2);
+    read_image("./textures/walls.bmp", 3);
     
     glutDisplayFunc(display);
     glutReshapeFunc(resize);
@@ -402,7 +390,7 @@ void draw_food() {
 // Função para desenhar o status do jogo na tela
 void game_status() {
     char tmp_str[40];
-    glColor3f(0.16, 0.95, 0.43);
+    glColor3f(0, 0.4, 0.7);
     sprintf(tmp_str, "[ SNAKE 3D - GAME ]");
     draw_text_bitmap(35, 22, tmp_str);
     glColor3f(0, 0, 0);
@@ -520,7 +508,7 @@ void run(int value) {
             points++;
             // play_score_sound(); // Toca o som de pontuação
             if (points < 100) size++;
-            if ((points % 5) == 0 && lvl < 3) lvl++;
+            if ((points % 10) == 0 && lvl < 3) lvl++;
             
             if (lvl != last_level_changed) {
                 change_level(lvl);
@@ -578,7 +566,7 @@ void drawTexturedCube(GLuint t) {
 }
 
 // Desenha o plano que a cobra vai correr
-void draw_gram(){
+void draw_grass() {
     glPushMatrix();
     glColor3f(0.0, 0.6, 0.2);
     glTranslatef(75.0, -16.0, 75.0);
@@ -586,6 +574,7 @@ void draw_gram(){
     drawTexturedCube(textureID1);
     glPopMatrix();
 }
+
 // Função para desenhar a cobra
 void draw_snake() {
     int  i;
@@ -594,7 +583,7 @@ void draw_snake() {
     glPushMatrix();
     manipulate_view_angle();
 	
-	draw_gram();// Desenha o plano que a cobra vai correr
+	draw_grass(); // Desenha o plano que a cobra vai correr
 
 	// Desenha a cabeça da cobra
     glColor3f(0.7, 0, 0.92); // Cor da cabeça da cobra (roxo)
@@ -625,13 +614,14 @@ void draw_snake() {
         glPopMatrix();
     }
 }
+
 // Adicione esta função para desenhar as paredes
 void draw_walls() {
     for (size_t i = 0; i < wall_positions.size(); ++i) {
         glPushMatrix();
         manipulate_view_angle();
         glTranslatef(wall_positions[i].first, -10.0, wall_positions[i].second);
-        glColor3f(0,0.35,0.8);
+        glColor3f(0.5, 0.5, 0.5);
         glScalef(0.5, 0.5, 0.5);
         drawTexturedCube(textureID2);
         glPopMatrix();
