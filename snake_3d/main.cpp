@@ -56,6 +56,7 @@ GLint _z = 15;
 GLint _oldX[2] = {};
 GLint _oldZ[2] = {};
 GLbyte direction = 0;
+GLint speed = 100;
 
 // Variáveis da comida
 GLint _bx = 0;
@@ -68,7 +69,7 @@ GLint _fw = 150;
 GLint _fh = 150;
 
 // Variáveis para o ângulo da câmera
-static GLfloat view_rotx = 45.0F;
+static GLfloat view_rotx = 90.0F;
 static GLfloat view_roty = 0.0F;
 static GLfloat view_rotz = 0.0F;
 
@@ -116,62 +117,6 @@ void load_song() {
     PlaySound(NULL, NULL, SND_ASYNC | SND_FILENAME | SND_LOOP | SND_NOSTOP | SND_PURGE);
     PlaySound(background_sound.file_name, NULL, SND_FILENAME | SND_ASYNC | SND_LOOP | SND_NOSTOP | SND_NOWAIT);
 }
-
-/*****************************
-|  CONFIGURAÇÕES DE TEXTURA  |
-*****************************/
-
-//Configura as texturas
-// typedef struct {////////////////////////////////////////////////////////////
-//     int width;
-//     int height;
-//     int channels;
-//     unsigned char* data;
-// } Image;
-
-// // Image* load_image(const char* filename);
-// void free_image(Image* image);
-
-// // Armazena o ID da textura gerada pelo OpenGL
-// GLuint textureID;////////////////////////////////////////////////////////////
-// GLuint textureID1;
-// GLuint textureID2;
-
-// void read_image(const char* filename, int texture) {//////////////////////
-//     Image* image = load_image(filename);
-
-//     if (image) {
-//     	if (texture == 1) {
-// 			glGenTextures(1, &textureID);
-//         	glBindTexture(GL_TEXTURE_2D, textureID);	
-// 		} else if (texture == 2) {
-// 			glGenTextures(1, &textureID1);
-//         	glBindTexture(GL_TEXTURE_2D, textureID1);
-// 		} else {
-// 			glGenTextures(1, &textureID2);
-//         	glBindTexture(GL_TEXTURE_2D, textureID2);
-// 		}
-
-//         // Configura os parâmetros da textura
-//         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-//         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-//         // Carrega os dados da imagem na textura
-//         GLenum format = (image->channels == 3) ? GL_RGB : GL_RGBA;
-//         glTexImage2D(GL_TEXTURE_2D, 0, format, image->width, image->height, 0, format, GL_UNSIGNED_BYTE, image->data);
-
-//         // Gera mipmaps para a textura
-//         gluBuild2DMipmaps(GL_TEXTURE_2D, format, image->width, image->height, format, GL_UNSIGNED_BYTE, image->data);
-
-//         // Desvincula a textura
-//         glBindTexture(GL_TEXTURE_2D, 0);
-
-//         // Libera a memória da imagem
-//         free_image(image);
-//     }
-// }
 
 /**************************
 |  CONFIGURAÇÕES DE MAPA  |
@@ -281,17 +226,16 @@ void change_level(int level) {
 bool game_started = false; // Verifica se deve mostrar a tela de Bem-vindo ou Game Over
 void welcome_screen_game_over_screen() {
     if (!game_started) {
-        glColor3f(0.16, 0.95, 0.43); // Cor do texto (PRETO)
-        draw_text_bitmap(35, 24, "BEM-VINDO!");
+        glColor3f(0.16, 0.95, 0.43); // Cor do texto (verde)
+        draw_text_bitmap(35, 24, "WELCOME!!!");
         glColor3f(0.0, 0.0, 0.0);
-        draw_text_bitmap(0, 10, "Este eh o jogo Snake-3D em OpenGL");
-        draw_text_bitmap(-5, 0, "Para iniciar o jogo aperte a tecla ESPACO...");
+        draw_text_bitmap(-5, 0, "Press SPACE to start the game...");
     } else if (game_over) {
         glColor3f(0.95, 0.18, 0.16); // Cor do texto (vermelho)
         draw_text_bitmap(35, 24, "GAME OVER!");
         glColor3f(0.0, 0.0, 0.0);
-        draw_text_bitmap(25, 10, "PONTUACAO FINAL: " + to_string(points) + " ");
-        draw_text_bitmap(0, 0, "Pressione ESPACO para reiniciar...");
+        draw_text_bitmap(28, 0, "FINAL SCORE: " + to_string(points) + " ");
+        draw_text_bitmap(-2, -20, "Press SPACE to continue the game...");
     }
 }
 
@@ -324,9 +268,6 @@ int main(int argc, char** argv) {
     glutKeyboardFunc(keyboard);
     
     glEnable(GL_DEPTH_TEST);
-    // read_image("./texturas/snake.bmp", 1);
-    // read_image("./texturas/grass_mine.bmp", 2);
-    // read_image("./texturas/paredes.bmp", 3);
     
     glutDisplayFunc(display);
     glutReshapeFunc(resize);
@@ -392,7 +333,6 @@ void reset() {
     points = 0;
     size = 0;
     game_over = false;
-    view_rotx = 45.0F;
     view_roty = 0.0F;
     view_rotz = 0.0F;
     head_rotation = 90.0F;
@@ -415,12 +355,12 @@ void draw_snake() {
     glPopMatrix();
 
     // Desenha a cabeça da cobra
-    glColor3f(1, 0, 0); // Cor da cabeça da cobra (vermelho)
+    glColor3f(0.7, 0, 0.92); // Cor da cabeça da cobra (roxo)
     glTranslatef(_x, -10.0, _z); // Pega a posição da cabeça da cobra de acordo com _x e _z
     glScalef(0.5, 0.5, 0.5);
     glutSolidSphere(10, 20, 20); // Desenha a cabeça como uma esfera um pouco maior que as esferas do corpo
     glRotatef(head_rotation, 0.0, 1.0, 0.0);
-    glColor3f(1, 0, 0);
+    glColor3f(0.7, 0, 0.92);
     glTranslatef(0, 0.0, 6.0);
     glScalef(0.8, 1.0, 1.0);
     glutSolidCone(10, 10, 20, 20);
@@ -437,7 +377,7 @@ void draw_snake() {
         glPushMatrix();
         manipulate_view_angle();
         glTranslatef(body_pos[0][i], -10.0, body_pos[1][i]); // Localização do corpo da cobra
-        glColor3f(1,0,0); // Cor do corpo da cobra (vermelho)
+        glColor3f(0.7, 0, 0.92); // Cor do corpo da cobra (roxo)
         glScalef(0.5,0.5,0.5);
         glutSolidSphere(7,20,20);
         glPopMatrix();
@@ -450,7 +390,7 @@ void draw_food() {
     glPushMatrix();
     manipulate_view_angle();
     glTranslatef(_bx, -10.0, _bz);
-    glColor3f(1, 1, 1);
+    glColor3f(1, 0, 0);
     glScalef(0.4, 0.4, 0.4);
     glutSolidSphere(7, 20, 20);
     glPopMatrix();
@@ -459,12 +399,18 @@ void draw_food() {
 // Função para desenhar o status do jogo na tela
 void game_status() {
     char tmp_str[40];
-    glColor3f(0.0, 0.0, 0.0);
-    sprintf(tmp_str, "SNAKE 3D - GAME");
-    draw_text_bitmap(43, 22, tmp_str);
+    glColor3f(0.16, 0.95, 0.43);
+    sprintf(tmp_str, "[ SNAKE 3D - GAME ]");
+    draw_text_bitmap(35, 22, tmp_str);
     glColor3f(0, 0, 0);
-    sprintf(tmp_str, "NIVEL: %d    PONTOS: %d", lvl, points);
-    draw_text_bitmap(38, 10, tmp_str);
+    sprintf(tmp_str, "LEVEL: %d     SCORE: %d", lvl, points);
+    draw_text_bitmap(35, 10, tmp_str);
+
+    glColor3f(0.0, 0.0, 0.0);
+    draw_text_bitmap(-100, -24, "(P) PAUSE");
+    draw_text_bitmap(-100, -38, "(SPACE) RESET");
+    draw_text_bitmap(-100, -52, "(V) CHANGE VIEW");
+    draw_text_bitmap(-100, -66, "(+/-) SPEED");
 }
 
 // Gerador de números aleatórios para a localização da comida que a cobra vai comer
@@ -571,7 +517,7 @@ void run(int value) {
             points++;
             // play_score_sound(); // Toca o som de pontuação
             if (points < 100) size++;
-            if ((points % 10) == 0 && lvl < 3) lvl++;
+            if ((points % 5) == 0 && lvl < 3) lvl++;
             
             if (lvl != last_level_changed) {
                 change_level(lvl);
@@ -591,42 +537,12 @@ void run(int value) {
         }
 
         // Configura o timer para a próxima iteração
-        glutTimerFunc(110, run, 0);
+        glutTimerFunc(speed, run, 0);
     } else {
         // Se o jogo estiver pausado, configura o timer para continuar verificando após um intervalo
         glutTimerFunc(500, run, 0);
     }
 }
-
-// void drawTexturedCube(GLuint t) {
-//     GLfloat vertices[][3] = {
-//         {-1.0, -1.0, -1.0}, {1.0, -1.0, -1.0}, {1.0, 1.0, -1.0}, {-1.0, 1.0, -1.0},
-//         {-1.0, -1.0, 1.0}, {1.0, -1.0, 1.0}, {1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0}
-//     };
-
-//     GLfloat texCoords[][2] = {
-//         {0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}
-//     };
-
-//     GLint faces[][4] = {
-//         {0, 1, 2, 3}, {1, 5, 6, 2}, {5, 4, 7, 6}, {4, 0, 3, 7}, {3, 2, 6, 7}, {4, 5, 1, 0}
-//     };
-
-//     glBindTexture(GL_TEXTURE_2D, t);
-//     glEnable(GL_TEXTURE_2D);
-
-//     glBegin(GL_QUADS);
-//     for (int i = 0; i < 6; ++i) {
-//         for (int j = 0; j < 4; ++j) {
-//             glTexCoord2fv(texCoords[j]);
-//             glVertex3fv(vertices[faces[i][j]]);
-//         }
-//     }
-//     glEnd();
-    
-//     glDisable(GL_TEXTURE_2D);
-//     glBindTexture(GL_TEXTURE_2D, 0);
-// }
 
 // Adicione esta função para desenhar as paredes
 void draw_walls() {
@@ -637,7 +553,6 @@ void draw_walls() {
         glColor3f(0.2, 0.2, 0.2);
         glScalef(0.5, 0.5, 0.5);
         glutSolidCube(7);
-        // drawTexturedCube(textureID2);
         glPopMatrix();
     }
 }
@@ -713,6 +628,15 @@ void keyboard(unsigned char key, int x, int y) {
         break;
     case 'P': case 'p': // Pausar/Despausar o jogo
         paused = !paused;
+        break;
+    case 'V': case 'v':
+        view_rotx = (view_rotx == 45.0) ? 90.0 : 45.0;
+        break;
+    case '+':
+        if (speed >= 30) speed -= 10;
+        break;
+    case '-':
+        if (speed <= 140) speed += 10;
         break;
     case ESC: // Sair do jogo
         exit(0);
